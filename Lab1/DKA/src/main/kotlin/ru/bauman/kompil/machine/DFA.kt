@@ -69,17 +69,6 @@ class DFA(var stateDiagram: StateDiagram) {
         }
 
         component.forEach { print("$it \t") }
-/*        println("Маркированная таблица: ")
-        for (i in markedTable) {
-            for (j in i)
-                print("$j \t")
-        println()
-        }
-
-        for (s in stateDiagram.states) {
-            s.forEach { print("$it \t") }
-            println()
-        }*/
     }
 
     //Построение таблицы, нейминг сохранен
