@@ -49,26 +49,55 @@ class DFA(var stateDiagram: StateDiagram) {
         //Шаг 3 и 4
         val markedTable = buildEqTable(reverseEdgeList)
 
+        for (q in markedTable) {
+            q.forEach { print("$it \t") }
+            println()
+        }
+
         //Шаг 5:
-        val n = stateDiagram.states.size
-        val component = Array(n) { -1 }
-        for (i in 0 until n)
+        val nSize = stateDiagram.states.size
+        val component = Array(nSize) { -1 }
+        for (i in 0 until nSize)
             if (!markedTable[0][i])
                 component[i] = 0
         var componentCounts = 0
-        for (i in 1 until n) {
+        for (i in 1 until nSize) {
             if(!reachable[i])
                 continue
             if(component[i] == -1) {
                 componentCounts++
                 component[i] = componentCounts
-                for(j in i + 1 until n)
+                for(j in i + 1 until nSize)
                     if(!markedTable[i][j])
                         component[j] = componentCounts
             }
         }
 
-        component.forEach { print("$it \t") }
+        //Новые состояния
+        val newStateList = mutableSetOf<MutableSet<Int>>()
+        for (str in markedTable) {
+            val newState = mutableSetOf<Int>()
+            for ((i, st) in str.withIndex()) {
+                if (!st)
+                    newState.add(i)
+
+            }
+            newStateList.add(newState)
+        }
+        newStateList.forEach { print("$it \t") }
+
+        //Создание новой таблицы
+        val newTable = mutableListOf<MutableList<Int>>()
+        val startedState = newStateList.find { it.contains(0) }
+        val endedState = newStateList.find { it.contains(stateDiagram.endedNumber.first()) }
+        newStateList.removeAll(mutableSetOf(startedState, endedState))
+        val deqState = ArrayDeque<MutableSet<Int>>()
+        deqState.addFirst(startedState!!)
+        newStateList.forEach {deqState.addLast(it)}
+        deqState.addLast(endedState!!)
+
+
+        stateDiagram.table = newTable
     }
 
     //Построение таблицы, нейминг сохранен

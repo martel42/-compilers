@@ -65,14 +65,6 @@ class StateDiagram {
     }
 
     override fun toString(): String {
-        //Тест для (a|b)*abb
-/*        val test = StateDiagram()
-        test.abc = mutableListOf("a", "b")
-        test.endedNumber = mutableSetOf(6)
-        test.states = mutableListOf(mutableSetOf(1, 2, 3), mutableSetOf(1, 2, 3, 4),
-            mutableSetOf(1, 2, 3, 5), mutableSetOf(1, 2, 3, 6))
-        test.table = mutableListOf(mutableListOf(0, 1), mutableListOf(1, 2), mutableListOf(1, 3), mutableListOf(1, 1))*/
-
         val content = StringBuilder()
         for (a in abc) {
             content.append("\t")
