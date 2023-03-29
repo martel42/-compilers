@@ -2,8 +2,6 @@ package ru.bauman.kompil.machine
 
 import ru.bauman.kompil.algorithm.ReversePolishNotation
 import ru.bauman.kompil.tree.SyntaxTree
-import java.util.Arrays
-import kotlin.math.abs
 
 class DFA(var stateDiagram: StateDiagram) {
     companion object {
@@ -74,7 +72,7 @@ class DFA(var stateDiagram: StateDiagram) {
         }
 
         //Новые состояния
-        val newStateList = mutableSetOf<MutableSet<Int>>()
+        val newStateSet = mutableSetOf<MutableSet<Int>>()
         for (str in markedTable) {
             val newState = mutableSetOf<Int>()
             for ((i, st) in str.withIndex()) {
@@ -82,20 +80,57 @@ class DFA(var stateDiagram: StateDiagram) {
                     newState.add(i)
 
             }
-            newStateList.add(newState)
+            newStateSet.add(newState)
         }
-        newStateList.forEach { print("$it \t") }
 
         //Создание новой таблицы
         val newTable = mutableListOf<MutableList<Int>>()
-        val startedState = newStateList.find { it.contains(0) }
-        val endedState = newStateList.find { it.contains(stateDiagram.endedNumber.first()) }
-        newStateList.removeAll(mutableSetOf(startedState, endedState))
-        val deqState = ArrayDeque<MutableSet<Int>>()
-        deqState.addFirst(startedState!!)
-        newStateList.forEach {deqState.addLast(it)}
-        deqState.addLast(endedState!!)
+        val startedState = newStateSet.find { it.contains(0) }
+        val endedState = newStateSet.find { it.contains(stateDiagram.states.size - 1) }
+        newStateSet.removeAll(mutableSetOf(startedState, endedState))
 
+        val newStateList = mutableListOf<MutableSet<Int>>(startedState!!)
+        newStateList.addAll(newStateSet.toList())
+        newStateList.add(endedState!!)
+        println("Новый лист состояний: $newStateList")
+
+        val deqState = ArrayDeque<MutableSet<Int>>()
+        deqState.addFirst(startedState)
+        newStateSet.forEach {deqState.addLast(it)}
+        deqState.addLast(endedState)
+
+
+
+        //ПРОДЕБАЖИТЬ, ПОЧЕМУ ДЛЯ ЭТАЛОНА СОСТОЯНИЙ МЕНЬШЕ НА 1!
+        while (deqState.isNotEmpty()) {
+            val st = deqState.removeFirst()
+            println("Рассматриваемое состояние: $st")
+            for ((k, ch) in stateDiagram.abc.withIndex()) {
+                val stList = mutableListOf<Int>()
+                println("Рассматриваемый переход: $ch")
+                for (zn in st) {
+                    //ZN - начальное состояние в группе нового состояние
+                    val sa = stateDiagram.table[zn][k]
+                    //sa - значение таблицы, т.е. в какое состояние раньше переходили при букве
+                    println(("Номерс старого состояния $zn и его значение $sa"))
+                    //ЧТОБЫ ДЛЯ КАЖДОГО СОТОЯНИЯ А НЕ ТОЛЬКО ДЛЯ СЛЕДУЮЩЕГО
+                    if (sa != -1)
+                        for ((l, checkSt) in newStateList.withIndex()) {
+                            println("Проеверяемое новое остояние: $checkSt")
+                            if (checkSt.contains(sa)) {
+                                println("Проверку прошло, пишем $l")
+                                stList.add(l)
+                            }
+                        }
+                }
+                println("Записали новое значение в таблицу: $stList")
+                newTable.add(stList)
+                println("=====================================")
+            }
+            println("=====================================")
+            println("=====================================")
+
+        }
 
         stateDiagram.table = newTable
     }

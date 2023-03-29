@@ -6,8 +6,7 @@ class ReversePolishNotation {
     companion object {
         fun of(regEx: String): ArrayDeque<String> {
             val stack = ArrayDeque<String>()
-            var indexChar = 0; //Спасибо Котлин за циклы
-            for (ch in regEx) {
+            for ((indexChar, ch) in regEx.withIndex()) {
                 val cur = ch.toString()
                 if (stack.isEmpty()) stack.addLast(cur)
                 else when (cur) {
@@ -72,7 +71,6 @@ class ReversePolishNotation {
                         }
                     }
                 }
-                indexChar++
             }
             stack.addLast(Operation.END.toString())
             stack.addLast(Operation.CAT.toString())
