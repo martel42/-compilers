@@ -28,15 +28,6 @@ class DFA(var stateDiagram: StateDiagram) {
         }
     }
 
-    //Минимализация ДКА по заданному алгоритму
-    fun minimization(type: String): DFA {
-        val minDFA = DFA(stateDiagram)
-        when(type) {
-            "ITMO-ALG" -> minDFA.itmoMinimization()
-        }
-        return minDFA
-    }
-
     private fun itmoMinimization() {
         //Шаг 1: Таблица из обратных ребер
         //Вектор d-1: (Номер состояния, номер символа) = (номера состояний)
@@ -44,7 +35,7 @@ class DFA(var stateDiagram: StateDiagram) {
         for (strNum in 0 until stateDiagram.table.size) { //Идем по состояниям
             for (sym in stateDiagram.abc) {   //Берем символ из алфавита
                 val listNumSym = listOf(strNum, stateDiagram.abc.indexOf(sym))
-                val numStates = findReverseEdge(strNum, sym);
+                val numStates = findReverseEdge(strNum, sym)
                 reverseEdgeList[listNumSym] = numStates
             }
         }
@@ -56,10 +47,8 @@ class DFA(var stateDiagram: StateDiagram) {
         //Шаг 3 и 4
         val markedTable = buildEqTable(reverseEdgeList)
 
-        for (q in markedTable) {
-            q.forEach { print("$it \t") }
-            println()
-        }
+        //val alterMarkedTable = buildAlterEqTable(stateDiagram)
+
 
         //Шаг 5:
         val nSize = stateDiagram.states.size
@@ -102,7 +91,7 @@ class DFA(var stateDiagram: StateDiagram) {
         val newStateList = mutableListOf<MutableSet<Int>>(startedState!!)
         newStateList.addAll(newStateSet.toList())
         newStateList.add(endedState!!)
-        println("Новый лист состояний: $newStateList")
+        //println("Новый лист состояний: $newStateList")
 
         val deqState = ArrayDeque<MutableSet<Int>>()
         deqState.addFirst(startedState)
@@ -133,7 +122,80 @@ class DFA(var stateDiagram: StateDiagram) {
             newTable.add(stRow)
         }
 
-        stateDiagram.table = newTable
+        //stateDiagram.table = newTable
+    }
+
+    private fun buildAlterEqTable(stateDiagram: StateDiagram): Array<BooleanArray> {
+        val n = stateDiagram.states.size
+        val alterMarked = Array(n) {BooleanArray(n) {false} }
+        //Сначала на 2 класса: неконечные и конечные (й)
+        val listEqStates = mutableListOf<MutableList<Int>>()
+        listEqStates.add((0..(n - 2)).toMutableList())
+        listEqStates.add(mutableListOf(n - 1)) //Последнее здесь - конечное
+
+
+
+
+        //Инициализируем таблицу
+        for (i in 0 until n)
+            for (j in 0 until n) {
+                var k = 0  //k - из первого класса?
+                if (listEqStates[1].contains(i)) k = 1 //Если нет, то из второго?
+                if (!listEqStates[k].contains(n - j - 1))
+                    alterMarked[i][j] = true
+            }
+
+        println("Альтернативная начальная таблица:")
+        for (q in alterMarked) {
+            q.forEach { print("$it \t") }
+            println()
+        }
+
+        //Отмечаем все N = true, неотмеченные (false) - классы эк-и по строкам
+        var iK = 0
+        var jK = 0
+        var isStillWorked = false
+        do {
+            isStillWorked = false
+            for (i in 0 until n - 1 - iK) {
+                iK++
+                for (j in 0 until n - 1 - jK) {
+                    if (isAlterChecked(i, j, alterMarked)) {
+                        alterMarked[i][j] = true
+                        isStillWorked = true
+                    }
+                }
+                jK++
+            }
+        }
+        while (isStillWorked)
+
+        println("Обрезанная таблица с разбивкой по классам")
+        iK = 0
+        jK = 0
+        for (i in 0 until n - 1 - iK) {
+            iK++
+            for (j in 0 until n - 1 - jK) {
+                print("${alterMarked[i][j]}  \t")
+            }
+            jK++
+            println()
+        }
+
+        return alterMarked
+    }
+
+    private fun isAlterChecked(i: Int, j: Int, alterMarked: Array<BooleanArray>): Boolean {
+        var isAlterChecked = false
+        for (chI in 0 until stateDiagram.abc.size) {
+            for (chJ in 0 until stateDiagram.abc.size) {
+                val a = stateDiagram.table[i][chI].getOrNull(0)
+                val b = stateDiagram.table[alterMarked.size - j - 1][chJ].getOrNull(0)
+                if (a != null && b != null && alterMarked[a][b])
+                    isAlterChecked = true
+            }
+        }
+        return isAlterChecked
     }
 
     //Построение таблицы, нейминг сохранен
@@ -214,7 +276,7 @@ class DFA(var stateDiagram: StateDiagram) {
     fun contains(inputs: String): Boolean {
         if (!stateDiagram.abc.containsAll(inputs.toList().map { it.toString() }))
             return false
-        var stateNumber = 0;
+        var stateNumber = 0
         for (ch in inputs) {
             //Берем номер нового состояния при определенном входном символа из определенного состояния
             if (stateNumber == -1)

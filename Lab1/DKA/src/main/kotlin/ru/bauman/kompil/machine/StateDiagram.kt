@@ -81,20 +81,31 @@ class StateDiagram {
 
     override fun toString(): String {
         val content = StringBuilder()
-        for (a in abc) {
-            content.append("\t\t")
-            content.append(a)
-        }
-        content.append("\n")
-        for ((countState, t) in table.withIndex()) {
-            content.append(countState)
-            for (s in t) {
-                content.append("\t\t")
-                if (s.isEmpty()) content.append(" - ")
-                else content.append(s)
+
+        for ((k, t) in table.withIndex()) {
+            for (ch in 0 until abc.size) {
+                content.append("Текущее состояние: $k \t")
+                content.append("Входной символ: ${abc[ch]} \t")
+                val nextState = t[ch].getOrNull(0)
+                if (nextState != null) content.append("Следующее состояние: $nextState \t")
+                content.append("\n")
             }
-            content.append("\n")
         }
+
+//        for (a in abc) {
+//            content.append("\t\t")
+//            content.append(a)
+//        }
+//        content.append("\n")
+//        for ((countState, t) in table.withIndex()) {
+//            content.append(countState)
+//            for (s in t) {
+//                content.append("\t\t")
+//                if (s.isEmpty()) content.append(" - ")
+//                else content.append(s)
+//            }
+//            content.append("\n")
+//        }
         return content.toString()
     }
 }
