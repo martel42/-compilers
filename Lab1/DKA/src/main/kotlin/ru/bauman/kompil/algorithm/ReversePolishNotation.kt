@@ -28,12 +28,10 @@ class ReversePolishNotation {
                         var raz = 0  //Разница между OR и CAT; CAT = 0, OR = 1
                         if (buf.contains(Operation.OR.toString())) raz++
                         if (indexChar >= (pos + raz)) {
-                            println("( - Not First => CHECK")
                             val chPered = regEx[indexChar - pos - raz]
                             if (chPered.toString() == Operation.OR.op)
                                 buf.addLast(stack.removeLast())
                             else {
-                                println("I'm CAT from ()")
                                 buf.addLast(Operation.CAT.toString())
                             }
                         }
@@ -74,7 +72,6 @@ class ReversePolishNotation {
             }
             stack.addLast(Operation.END.toString())
             stack.addLast(Operation.CAT.toString())
-            println(stack)
             return stack
         }
     }

@@ -17,6 +17,15 @@ class DFA(var stateDiagram: StateDiagram) {
             stateDiagram.createByTree(tree)
             return DFA(stateDiagram)
         }
+
+        //Минимализация ДКА по заданному алгоритму
+        fun minimization(dfa: DFA, type: String): DFA {
+            val minDFA = DFA(StateDiagram.copy(dfa.stateDiagram))
+            when(type) {
+                "ITMO-ALG" -> minDFA.itmoMinimization()
+            }
+            return minDFA
+        }
     }
 
     //Минимализация ДКА по заданному алгоритму
@@ -83,8 +92,9 @@ class DFA(var stateDiagram: StateDiagram) {
             newStateSet.add(newState)
         }
 
+
         //Создание новой таблицы
-        val newTable = mutableListOf<MutableList<Int>>()
+        val newTable = mutableListOf<MutableList<MutableList<Int>>>()
         val startedState = newStateSet.find { it.contains(0) }
         val endedState = newStateSet.find { it.contains(stateDiagram.states.size - 1) }
         newStateSet.removeAll(mutableSetOf(startedState, endedState))
@@ -100,36 +110,27 @@ class DFA(var stateDiagram: StateDiagram) {
         deqState.addLast(endedState)
 
 
-
-        //ПРОДЕБАЖИТЬ, ПОЧЕМУ ДЛЯ ЭТАЛОНА СОСТОЯНИЙ МЕНЬШЕ НА 1!
         while (deqState.isNotEmpty()) {
             val st = deqState.removeFirst()
-            println("Рассматриваемое состояние: $st")
+            val stRow = mutableListOf<MutableList<Int>>()
             for ((k, ch) in stateDiagram.abc.withIndex()) {
-                val stList = mutableListOf<Int>()
-                println("Рассматриваемый переход: $ch")
-                for (zn in st) {
-                    //ZN - начальное состояние в группе нового состояние
-                    val sa = stateDiagram.table[zn][k]
-                    //sa - значение таблицы, т.е. в какое состояние раньше переходили при букве
-                    println(("Номерс старого состояния $zn и его значение $sa"))
-                    //ЧТОБЫ ДЛЯ КАЖДОГО СОТОЯНИЯ А НЕ ТОЛЬКО ДЛЯ СЛЕДУЮЩЕГО
-                    if (sa != -1)
-                        for ((l, checkSt) in newStateList.withIndex()) {
-                            println("Проеверяемое новое остояние: $checkSt")
-                            if (checkSt.contains(sa)) {
-                                println("Проверку прошло, пишем $l")
-                                stList.add(l)
-                            }
-                        }
+                val stSet = mutableSetOf<Int>()
+                val trans = mutableSetOf <Int>()
+                for ((l, checkSt) in newStateList.withIndex()) {
+                    for (zn in st) {
+                        val sa = stateDiagram.table[zn][k]
+                        //Нет проверки если все переходы в никуда
+                        if (sa.isNotEmpty())
+                            trans.addAll(sa)
+                    }
+                    if (trans.isNotEmpty() && checkSt.containsAll(trans)) {
+                        stSet.add(l)
+                    }
                 }
-                println("Записали новое значение в таблицу: $stList")
-                newTable.add(stList)
-                println("=====================================")
+                stRow.add(stSet.toMutableList())
+                //stRow.add(mutableListOf(stSet.toMutableList().getOrElse(0) {1}))
             }
-            println("=====================================")
-            println("=====================================")
-
+            newTable.add(stRow)
         }
 
         stateDiagram.table = newTable
@@ -176,7 +177,7 @@ class DFA(var stateDiagram: StateDiagram) {
         val reverseEdges = mutableSetOf<Int>()
         for ((k, str) in stateDiagram.table.withIndex()) {
             val pos = stateDiagram.abc.indexOf(a)
-            if (str[pos] == stateNumber)
+            if (str[pos].contains(stateNumber))
                 reverseEdges.add(k)
         }
         return reverseEdges
@@ -190,12 +191,13 @@ class DFA(var stateDiagram: StateDiagram) {
     }
 
     private fun findReachable(reachableStateNumber: Int, checkedStateNumber: Int, checkedStates: MutableSet<Int>): Boolean {
-        if (stateDiagram.table[checkedStateNumber].contains(reachableStateNumber))
+        if (stateDiagram.table[checkedStateNumber][0].contains(reachableStateNumber))
             return true
         else {
             checkedStates.add(checkedStateNumber)
             val uncheckedStates = mutableListOf<Int>()
-            uncheckedStates.addAll(stateDiagram.table[checkedStateNumber])
+            //ЗАГЛУШКА ДЛЯ ТАБЛИЦЫ С ОДНИМ ПЕРЕХОДОМ
+            uncheckedStates.addAll(stateDiagram.table[checkedStateNumber][0])
             uncheckedStates.remove(checkedStateNumber) //Проверяем все кроме текущего
             var checkResult = false
             for (unS in uncheckedStates) {
@@ -217,7 +219,8 @@ class DFA(var stateDiagram: StateDiagram) {
             //Берем номер нового состояния при определенном входном символа из определенного состояния
             if (stateNumber == -1)
                 stateNumber = 0
-            stateNumber = stateDiagram.table[stateNumber][stateDiagram.abc.indexOf(ch.toString())]
+            //ЗАГЛУШКА ДЛЯ ТАБЛИЦЫ С ОДНИМ ПЕРЕХОДОМ
+            stateNumber = stateDiagram.table[stateNumber][stateDiagram.abc.indexOf(ch.toString())].getOrElse(0) {-1}
         }
 
 

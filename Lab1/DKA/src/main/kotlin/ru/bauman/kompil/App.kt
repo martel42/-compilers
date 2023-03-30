@@ -9,7 +9,7 @@ fun main() {
         val dfa = DFA.of(regEx)
         println("Таблица состояний детерминированого конечного автомата: ")
         println(dfa)
-        val minDFA = dfa.minimization("ITMO-ALG")
+        val minDFA = DFA.minimization(dfa, "ITMO-ALG")
         println("Таблица состояний минимального конечного автомата: ")
         println(minDFA)
         println("Введите входную цепочку: ")

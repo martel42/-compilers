@@ -7,7 +7,22 @@ class StateDiagram {
     var abc = mutableListOf<String>()
     var endedNumber = mutableSetOf<Int>()
     var states = mutableListOf<MutableSet<Int>>()
-    var table = mutableListOf<MutableList<Int>>()
+    var table = mutableListOf<MutableList<MutableList<Int>>>()
+
+    companion object {
+        fun copy(stateD: StateDiagram ): StateDiagram {
+            val copyStateD = StateDiagram()
+            //TODO копирование каждого объекта
+            copyStateD.abc = stateD.abc
+            copyStateD.states = stateD.states
+            copyStateD.endedNumber = stateD.endedNumber
+            val copyTable = mutableListOf<MutableList<MutableList<Int>>>()
+            for (a in stateD.table)
+                copyTable.add(a)
+            copyStateD.table = copyTable
+            return copyStateD
+        }
+    }
 
     fun createByTree(tree: SyntaxTree) {
         abc = tree.abc
@@ -19,23 +34,23 @@ class StateDiagram {
         uncheckedStates.addLast(states[0])
         do {
             val state = uncheckedStates.removeLast()
-            val row = mutableListOf<Int>()
+            val row = mutableListOf<MutableList<Int>>()
             for (a in abc) {
                 var listNode = mutableListOf<SyntaxNode>()
                 listNode = findNodeByNumber(a, state, tree.root!!, listNode)
                 //Если нет перехода
                 if (listNode.isEmpty()) {
-                    row.add(-1)
+                    row.add(mutableListOf())
                 }
                 else {
                     val probState = mutableSetOf<Int>()
                     for (node in listNode) probState.addAll(node.followPos)
                     if (states.contains(probState))
-                        row.add(states.indexOf(probState))
+                        row.add(mutableListOf(states.indexOf(probState)))
                     else {
                         states.add(probState)
                         uncheckedStates.addLast(probState)
-                        row.add(states.indexOf(probState))
+                        row.add(mutableListOf(states.indexOf(probState)))
                     }
                 }
             }
@@ -67,15 +82,15 @@ class StateDiagram {
     override fun toString(): String {
         val content = StringBuilder()
         for (a in abc) {
-            content.append("\t")
+            content.append("\t\t")
             content.append(a)
         }
         content.append("\n")
         for ((countState, t) in table.withIndex()) {
             content.append(countState)
             for (s in t) {
-                content.append("\t")
-                if (s < 0) content.append("-")
+                content.append("\t\t")
+                if (s.isEmpty()) content.append(" - ")
                 else content.append(s)
             }
             content.append("\n")
