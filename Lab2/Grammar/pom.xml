@@ -7,7 +7,7 @@
   <version>1.0-STUDY</version>
   <packaging>jar</packaging>
 
-  <name>Grammar</name>
+  <name>grammar</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -28,6 +28,11 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-kotlin</artifactId>
+      <version>2.14.2</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -47,7 +52,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration><source>11</source><target>11</target></configuration></plugin>
     </plugins>
   </build>
 </project>
