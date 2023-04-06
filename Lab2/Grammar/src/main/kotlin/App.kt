@@ -2,11 +2,18 @@ package ru.bauman.kompil
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import ru.bauman.kompil.algos.GrammarTrans
 import ru.bauman.kompil.grammar.Grammar
 import java.nio.file.Files
 import java.nio.file.Path
 
 fun main() {
-    val inputJson = Files.readAllLines(Path.of("data/ex.json")).reduce { acc, it -> acc + it }
-    val inputGrammar: Grammar = jacksonObjectMapper().readValue(inputJson)
+    val mapper = jacksonObjectMapper()
+    val inputJson = Files.readAllLines(Path.of("data/input2.json")).reduce { acc, it -> acc + it }
+    val inputGrammar: Grammar = mapper.readValue(inputJson)
+    println(inputGrammar)
+    val newGrammar = GrammarTrans.withoutLeftReс(inputGrammar)
+    println(newGrammar)
+    val newJson = mapper.writeValueAsString(newGrammar)
+    Files.writeString(Path.of("data/output.json"), newJson)
 }
