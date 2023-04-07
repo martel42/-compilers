@@ -4,17 +4,97 @@ import ru.bauman.kompil.grammar.Grammar
 
 class GrammarTrans {
     companion object {
-        fun withoutLeftReс(grammar: Grammar): Grammar {
+        fun withoutLeftRec(grammar: Grammar): Grammar {
             return withoutLoop(grammar)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
             return withoutEps(grammar)
         }
         fun withoutEps(grammar: Grammar): Grammar {
-            return withoutUseless(grammar)
+            val grammarNotUseless = withoutUseless(grammar)
+            println(grammarNotUseless)
+            //ИТМОшный алговысер
+            //Структура и инициализация
+            val isEps = BooleanArray(grammarNotUseless.nonTerms.size) {false}
+            //Номер правила: сколько нетерминалов в правиле
+            val counter = IntArray(grammarNotUseless.prods.size)
+            for ((k, pr) in grammarNotUseless.prods.withIndex()) {
+                counter[k] = pr.values.flatten().filter { it -> grammarNotUseless.nonTerms.contains(it) }.size
+            }
+
+            counter.forEach { print("$it \t") }
+            println()
+            val concernedRules = mutableMapOf<String, List<Int>>()
+            for (nT in grammarNotUseless.nonTerms) {
+                val listNT = mutableListOf<Int>()
+                for ((k, pr) in grammarNotUseless.prods.withIndex()) {
+                    if (pr.values.flatten().contains(nT)) {
+                        listNT.add(k)
+                    }
+                }
+//                listNT.addAll(
+//                    grammarNotUseless.prods
+//                        .filter { it.containsKey(nT) }
+//                        .flatMap { it.values.flatten().filter { x -> grammarNotUseless.nonTerms.contains(x) } }
+//                        .filter { it != nT } //!Может дропнуть нужное правило!
+//                )
+//                val listNTNumber = mutableListOf<Int>()
+//                for (n in listNT)
+//                    for ((k, prod) in grammarNotUseless.prods.withIndex())
+//                        if (prod.containsKey(n))
+//                            listNTNumber.add(k)
+                concernedRules[nT] = listNT
+            }
+            println(concernedRules)
+
+            val que = ArrayDeque<String>()
+
+            //Добавление eps
+            for (nt in grammarNotUseless.prods) {
+                val zn = nt.values.flatten().reduce { acc, s ->  acc + s}
+                //Нет случая с t: e, p, s
+                if (nt.values.size == 1 && "eps" == zn) {
+                    que.addLast(nt.keys.last())
+                    isEps[grammarNotUseless.nonTerms.indexOf(nt.keys.last())] = true
+                }
+            }
+            println(que)
+            isEps.forEach { print("$it \t") }
+            println()
+
+            //Нахождение nonTermsEps
+            while (que.isNotEmpty()) {
+                val listNT = concernedRules[que.removeFirst()]!!
+                for (prNum in listNT) {
+                    counter[prNum]--
+                    if (counter[prNum] == 0) {
+                        val newNTinQue = grammarNotUseless.prods[prNum].keys.last()
+                        isEps[grammarNotUseless.nonTerms.indexOf(newNTinQue)] = true
+                        que.addLast(newNTinQue)
+                    }
+                }
+            }
+
+            isEps.forEach { print("$it \t") }
+            println()
+
+            val newTerms = mutableSetOf<String>()
+            newTerms.addAll(grammarNotUseless.terms)
+            newTerms.remove("eps")
+            val newProds = mutableListOf<Map<String, MutableList<String>>>()
+            newProds.addAll(grammar.prods)
+            val newNonTerms = mutableSetOf<String>()
+            newNonTerms.addAll(grammarNotUseless.nonTerms)
+
+            //Удаление nT -> eps
+            for (pr in grammarNotUseless.prods)
+                if (pr.values.size == 1 && pr.values.flatten().contains("eps"))
+                    newProds.remove(pr)
+
+            return Grammar(newTerms, newNonTerms, newProds, grammarNotUseless.start)
         }
         fun withoutUseless(grammar: Grammar): Grammar {
-            return withoutUnreachable(withoutGen(grammar))
+            return withoutUnreachable(withoutNotGen(grammar))
         }
         fun withoutUnreachable(grammar: Grammar): Grammar {
             println(grammar)
@@ -67,7 +147,7 @@ class GrammarTrans {
             newProds.removeAll(remList)
             return Grammar(newTerms, newNonTerms, newProds.toList(), grammar.start)
         }
-        fun withoutGen(grammar: Grammar): Grammar {
+        fun withoutNotGen(grammar: Grammar): Grammar {
             val set = mutableSetOf<String>()
             for (i in grammar.prods) {
                 set.addAll(i.filter { (x, y) -> grammar.nonTerms.contains(x) && grammar.terms.containsAll(y) }.keys)
