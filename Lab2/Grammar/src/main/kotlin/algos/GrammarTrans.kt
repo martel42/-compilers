@@ -86,12 +86,26 @@ class GrammarTrans {
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarNotUseless.nonTerms)
 
+            //TODO Преобразование правил без eps
+
+
             //Удаление nT -> eps
             for (pr in grammarNotUseless.prods)
                 if (pr.values.size == 1 && pr.values.flatten().contains("eps"))
                     newProds.remove(pr)
 
-            return Grammar(newTerms, newNonTerms, newProds, grammarNotUseless.start)
+            //Новый старт
+            val newStart = if (isEps[0]) {
+                newNonTerms.add("S'")
+                newProds.addAll(listOf(
+                    mapOf("S'" to mutableListOf(grammarNotUseless.start)),
+                    mapOf("S'" to mutableListOf("eps")))
+                )
+                "S'"
+            }
+            else grammarNotUseless.start
+
+            return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
         fun withoutUseless(grammar: Grammar): Grammar {
             return withoutUnreachable(withoutNotGen(grammar))
