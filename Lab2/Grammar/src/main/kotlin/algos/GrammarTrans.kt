@@ -56,7 +56,8 @@ class GrammarTrans {
                 val listNT = concernedRules[que.removeFirst()]!!
                 for (prNum in listNT) {
                     counter[prNum]--
-                    if (counter[prNum] == 0) {
+                    val containsTerm = grammarNotUseless.prods[prNum].values.flatten().any { grammarNotUseless.terms.contains(it) }
+                    if (counter[prNum] == 0 && !containsTerm) {
                         val newNTinQue = grammarNotUseless.prods[prNum].keys.last()
                         isEps[grammarNotUseless.nonTerms.indexOf(newNTinQue)] = true
                         que.addLast(newNTinQue)
@@ -70,19 +71,67 @@ class GrammarTrans {
             val newTerms = mutableSetOf<String>()
             newTerms.addAll(grammarNotUseless.terms)
             newTerms.remove("eps")
-            val newProds = mutableListOf<Map<String, MutableList<String>>>()
-            //newProds.addAll(grammar.prods)
+            var newProds = mutableListOf<Map<String, MutableList<String>>>()
+            newProds.addAll(grammar.prods)
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarNotUseless.nonTerms)
 
-            //Удаление nT -> eps
+            //Удаление правил nT -> eps
+            //TODO Мб нужно перенести или еще раз использовать
             for (pr in grammarNotUseless.prods)
                 if (pr.values.size == 1 && pr.values.flatten().contains("eps"))
                     newProds.remove(pr)
 
-            //TODO Преобразование правил без eps
-            for (pt in grammar.prods) {
+            //Удаление нетерминалов nT -> eps
+            for ((ntNum, nt) in grammarNotUseless.nonTerms.withIndex()) {
+                if (isEps[ntNum]) {
+                    if (grammarNotUseless.prods.filter { it.keys.first() == nt }.all { it.values.size == 1 && it.values.flatten().contains("eps") } )
+                        newNonTerms.remove(nt)
+                }
+            }
 
+            //Для удаления дубликатов
+            val newPrSetToList = mutableSetOf<MutableSet<String>>()
+            fun generateNewPr (nt : String, listCur : List<String>, listNew : MutableList<String>) {
+                if (listCur.isEmpty() && listNew.isNotEmpty()) newPrSetToList.add(listNew.toMutableSet())
+                else for (st in listCur) {
+
+                    val newListCur = mutableListOf<String>()
+                    newListCur.addAll(listCur)
+                    newListCur.remove(st)
+                    val newListNew = mutableListOf<String>()
+                    newListNew.addAll(listNew)
+
+                    if (newTerms.contains(st)) {
+                        newListNew.add(st)
+                        generateNewPr(nt, newListCur.toList(), newListNew)
+                    }
+                    else if (!isEps[grammarNotUseless.nonTerms.indexOf(st)]) {
+                        if (newNonTerms.contains(st))
+                            newListNew.add(st)
+                        generateNewPr(nt, newListCur.toList(), newListNew)
+                    }
+                    else {
+                        generateNewPr(nt, newListCur.toList(), newListNew)
+                        if (newNonTerms.contains(st)) {
+                            newListNew.add(st)
+                            generateNewPr(nt, newListCur.toList(), newListNew)
+                        }
+                    }
+                }
+            }
+
+            //Преобразование правил без eps
+            for (pr in grammarNotUseless.prods) {
+                val right = pr.values.flatten()
+                if (right.any { grammarNotUseless.nonTerms.contains(it) && isEps[grammarNotUseless.nonTerms.indexOf(it)] } ) {
+                    newPrSetToList.clear()
+                    generateNewPr(pr.keys.first(), right, mutableListOf())
+                    for (kt in newPrSetToList) {
+                        newProds.add(mutableMapOf(pr.keys.first() to kt.toMutableList()))
+                    }
+                    newProds.remove(pr)
+                }
             }
 
 
@@ -100,6 +149,8 @@ class GrammarTrans {
 
             return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
+
+
         fun withoutUseless(grammar: Grammar): Grammar {
             return withoutUnreachable(withoutNotGen(grammar))
         }
