@@ -32,17 +32,6 @@ class GrammarTrans {
                         listNT.add(k)
                     }
                 }
-//                listNT.addAll(
-//                    grammarNotUseless.prods
-//                        .filter { it.containsKey(nT) }
-//                        .flatMap { it.values.flatten().filter { x -> grammarNotUseless.nonTerms.contains(x) } }
-//                        .filter { it != nT } //!Может дропнуть нужное правило!
-//                )
-//                val listNTNumber = mutableListOf<Int>()
-//                for (n in listNT)
-//                    for ((k, prod) in grammarNotUseless.prods.withIndex())
-//                        if (prod.containsKey(n))
-//                            listNTNumber.add(k)
                 concernedRules[nT] = listNT
             }
             println(concernedRules)
@@ -82,7 +71,7 @@ class GrammarTrans {
             newTerms.addAll(grammarNotUseless.terms)
             newTerms.remove("eps")
             val newProds = mutableListOf<Map<String, MutableList<String>>>()
-            newProds.addAll(grammar.prods)
+            //newProds.addAll(grammar.prods)
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarNotUseless.nonTerms)
 
@@ -92,6 +81,11 @@ class GrammarTrans {
                     newProds.remove(pr)
 
             //TODO Преобразование правил без eps
+            for (pt in grammar.prods) {
+
+            }
+
+
 
             //Новый старт
             val newStart = if (isEps[0]) {
