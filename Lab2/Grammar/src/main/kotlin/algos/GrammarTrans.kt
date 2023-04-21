@@ -8,7 +8,56 @@ class GrammarTrans {
             return withoutLoop(grammar)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
-            return withoutEps(grammar)
+            val grammarWithoutEps = withoutEps(grammar)
+            println(grammarWithoutEps)
+
+            val newTerms = mutableSetOf<String>()
+            newTerms.addAll(grammarWithoutEps.terms)
+            val newProds = mutableListOf<Map<String, MutableList<String>>>()
+            newProds.addAll(grammar.prods)
+            val newNonTerms = mutableSetOf<String>()
+            newNonTerms.addAll(grammarWithoutEps.nonTerms)
+
+            val listCyclePair = mutableListOf<Pair<String, String>>()
+            //Поиск цепных правил и их удаление
+            for (pr in grammarWithoutEps.prods) {
+                if (pr.values.flatten().size == 1 && grammarWithoutEps.nonTerms.contains(pr.values.flatten()[0])) {
+                    val newPair = Pair(pr.keys.first(), pr.values.flatten().first())
+                    listCyclePair.add(newPair)
+                    newProds.remove(pr)
+                }
+            }
+
+            //Добавление более длинных цепочек для случаев вида: (A B) (A C) (C D) (D M) (B L)
+            var k = listCyclePair.size
+            for (i in 0 until  k) {
+                val pair = listCyclePair[i]
+                for (j in 0 until k) {
+                    if (pair.second == listCyclePair[j].first) {
+                        listCyclePair.add(Pair(pair.first, listCyclePair[j].second))
+                    }
+                }
+                k = listCyclePair.size
+            }
+
+            //Добавление новых правил
+            for (pair in listCyclePair) {
+                val prods =  newProds.filter { it.keys.first() == pair.second }
+                for (pr in prods) {
+                    newProds.add(mutableMapOf(pair.first to pr.values.flatten().toMutableList()))
+                }
+            }
+
+            //Удаление дубликатов
+            val newNewProds = mutableListOf<Map<String, MutableList<String>>>()
+            for (np in newProds) {
+                if (newNewProds.isEmpty() || newNewProds.none { it == np }) {
+                    println(np.keys.first())
+                    newNewProds.add(np)
+                }
+            }
+
+            return Grammar(newTerms, newNonTerms, newNewProds, grammarWithoutEps.start)
         }
         fun withoutEps(grammar: Grammar): Grammar {
             val grammarNotUseless = withoutUseless(grammar)
@@ -22,8 +71,6 @@ class GrammarTrans {
                 counter[k] = pr.values.flatten().filter { it -> grammarNotUseless.nonTerms.contains(it) }.size
             }
 
-            counter.forEach { print("$it \t") }
-            println()
             val concernedRules = mutableMapOf<String, List<Int>>()
             for (nT in grammarNotUseless.nonTerms) {
                 val listNT = mutableListOf<Int>()
@@ -34,7 +81,6 @@ class GrammarTrans {
                 }
                 concernedRules[nT] = listNT
             }
-            println(concernedRules)
 
             val que = ArrayDeque<String>()
 
@@ -42,14 +88,11 @@ class GrammarTrans {
             for (nt in grammarNotUseless.prods) {
                 val zn = nt.values.flatten().reduce { acc, s ->  acc + s}
                 //Нет случая с t: e, p, s
-                if (nt.values.size == 1 && "eps" == zn) {
+                if (nt.values.flatten().size == 1 && "eps" == zn) {
                     que.addLast(nt.keys.last())
                     isEps[grammarNotUseless.nonTerms.indexOf(nt.keys.last())] = true
                 }
             }
-            println(que)
-            isEps.forEach { print("$it \t") }
-            println()
 
             //Нахождение nonTermsEps
             while (que.isNotEmpty()) {
@@ -65,13 +108,11 @@ class GrammarTrans {
                 }
             }
 
-            isEps.forEach { print("$it \t") }
-            println()
 
             val newTerms = mutableSetOf<String>()
             newTerms.addAll(grammarNotUseless.terms)
             newTerms.remove("eps")
-            var newProds = mutableListOf<Map<String, MutableList<String>>>()
+            val newProds = mutableListOf<Map<String, MutableList<String>>>()
             newProds.addAll(grammar.prods)
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarNotUseless.nonTerms)
@@ -79,7 +120,7 @@ class GrammarTrans {
             //Удаление правил nT -> eps
             //TODO Мб нужно перенести или еще раз использовать
             for (pr in grammarNotUseless.prods)
-                if (pr.values.size == 1 && pr.values.flatten().contains("eps"))
+                if (pr.values.flatten().size == 1 && pr.values.flatten().contains("eps"))
                     newProds.remove(pr)
 
             //Удаление нетерминалов nT -> eps
@@ -149,8 +190,6 @@ class GrammarTrans {
 
             return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
-
-
         fun withoutUseless(grammar: Grammar): Grammar {
             return withoutUnreachable(withoutNotGen(grammar))
         }
