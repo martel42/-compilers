@@ -26,11 +26,11 @@ class GrammarTrans {
                 for (j in 0 until i) {
                     val prods2 = newProds.filter { it.keys.first() == listNonTerms[j] }
                     for (pr in prods) {
-                        if (pr.values.flatten()[0] != nT) {
+                        if (pr.values.flatten()[0] == listNonTerms[j]) {
                             newProds.remove(pr)
                             for (pr2 in prods2) {
                                 newProds.add(mapOf(pr.keys.first() to pr.values.flatten().toMutableList()
-                                        .apply { remove(listNonTerms[j]) && addAll(0, pr2.values.flatten()) }))
+                                        .apply { remove(listNonTerms[j]) && addAll(j, pr2.values.flatten()) }))
                             }
                         }
                     }

@@ -9,7 +9,7 @@ import java.nio.file.Path
 
 fun main() {
     val mapper = jacksonObjectMapper()
-    val inputJson = Files.readAllLines(Path.of("Grammar/data/drigin.json")).reduce { acc, it -> acc + it }
+    val inputJson = Files.readAllLines(Path.of("Grammar/data/leftdjvu.json")).reduce { acc, it -> acc + it }
     val inputGrammar: Grammar = mapper.readValue(inputJson)
     println("Начальная грамматика:")
     println(inputGrammar)
