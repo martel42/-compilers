@@ -2,19 +2,59 @@ package ru.bauman.kompil.algos
 
 import ru.bauman.kompil.grammar.Grammar
 
+//ИТМО
 class GrammarTrans {
     companion object {
         fun withoutLeftRec(grammar: Grammar): Grammar {
-            return withoutLoop(grammar)
+            val grammarWithoutLoop = withoutLoop(grammar)
+            println("Грамматика без циклов")
+            println(grammarWithoutLoop)
+
+            val newTerms = mutableSetOf<String>()
+            newTerms.addAll(grammarWithoutLoop.terms)
+            val newProds = mutableListOf<Map<String, MutableList<String>>>()
+            newProds.addAll(grammarWithoutLoop.prods)
+            val newNonTerms = mutableSetOf<String>()
+            newNonTerms.addAll(grammarWithoutLoop.nonTerms)
+            val newStart = grammarWithoutLoop.start
+
+            //Непопосредственная рекурсия
+            val imProds = mutableListOf<Map<String, MutableList<String>>>()
+            //Ищем
+            for (pr in newProds)
+                if (pr.keys.first() == pr.values.flatten()[0] && pr.values.flatten().size > 1)
+                    imProds.add(pr)
+            //Добавляем и удаляем (заменяем)
+            for (pr in imProds) {
+                //Возможно лишнее удаление, если нет beta (см. алгоритм)
+                newProds.remove(pr)
+                val bufProds = newProds.filter { it.keys.first() == pr.keys.first() }
+                val nonTerm = "${pr.keys.first()}'"
+                for (bpr in bufProds) {
+                    newProds.add(mapOf(pr.keys.first() to bpr.values.flatten().toMutableList()
+                            .apply { add(nonTerm) && remove(bpr.keys.first()) }))
+
+                    newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
+                            .apply { remove(pr.keys.first()) }))
+                    newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
+                            .apply { remove(pr.keys.first()) && add(nonTerm) }))
+                }
+                newNonTerms.add(nonTerm)
+            }
+
+            //Произвольная
+
+            return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
             val grammarWithoutEps = withoutEps(grammar)
+            println("Грамматика без эпсилон: ")
             println(grammarWithoutEps)
 
             val newTerms = mutableSetOf<String>()
             newTerms.addAll(grammarWithoutEps.terms)
             val newProds = mutableListOf<Map<String, MutableList<String>>>()
-            newProds.addAll(grammar.prods)
+            newProds.addAll(grammarWithoutEps.prods)
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarWithoutEps.nonTerms)
 
@@ -52,7 +92,6 @@ class GrammarTrans {
             val newNewProds = mutableListOf<Map<String, MutableList<String>>>()
             for (np in newProds) {
                 if (newNewProds.isEmpty() || newNewProds.none { it == np }) {
-                    println(np.keys.first())
                     newNewProds.add(np)
                 }
             }
@@ -61,6 +100,7 @@ class GrammarTrans {
         }
         fun withoutEps(grammar: Grammar): Grammar {
             val grammarNotUseless = withoutUseless(grammar)
+            println("Граммтика без бесполезных")
             println(grammarNotUseless)
             //ИТМОшный алговысер
             //Структура и инициализация
@@ -113,7 +153,7 @@ class GrammarTrans {
             newTerms.addAll(grammarNotUseless.terms)
             newTerms.remove("eps")
             val newProds = mutableListOf<Map<String, MutableList<String>>>()
-            newProds.addAll(grammar.prods)
+            newProds.addAll(grammarNotUseless.prods)
             val newNonTerms = mutableSetOf<String>()
             newNonTerms.addAll(grammarNotUseless.nonTerms)
 
@@ -176,6 +216,9 @@ class GrammarTrans {
             }
 
 
+            for (pr in grammarNotUseless.prods)
+                if (pr.values.flatten().size == 1 && pr.values.flatten().contains("eps"))
+                    newProds.remove(pr)
 
             //Новый старт
             val newStart = if (isEps[0]) {
@@ -191,10 +234,10 @@ class GrammarTrans {
             return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
         fun withoutUseless(grammar: Grammar): Grammar {
-            return withoutUnreachable(withoutNotGen(grammar))
+            //return withoutUnreachable(withoutNotGen(grammar))
+            return  withoutUnreachable(grammar)
         }
         fun withoutUnreachable(grammar: Grammar): Grammar {
-            println(grammar)
             val listOfV = mutableListOf<MutableSet<String>>()
             listOfV.add(mutableSetOf(grammar.start))
             do {
