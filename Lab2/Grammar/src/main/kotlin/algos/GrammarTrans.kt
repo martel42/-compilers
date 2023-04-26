@@ -18,6 +18,31 @@ class GrammarTrans {
             newNonTerms.addAll(grammarWithoutLoop.nonTerms)
             val newStart = grammarWithoutLoop.start
 
+
+            //Произвольная
+            val listNonTerms = newNonTerms.toList()
+            for ((i, nT) in newNonTerms.withIndex()) {
+                val prods = newProds.filter { it.keys.first() == listNonTerms[i] }
+                for (j in 0 until i) {
+                    val prods2 = newProds.filter { it.keys.first() == listNonTerms[j] }
+                    for (pr in prods) {
+                        if (pr.values.flatten()[0] != nT) {
+                            newProds.remove(pr)
+                            for (pr2 in prods2) {
+                                newProds.add(mapOf(pr.keys.first() to pr.values.flatten().toMutableList()
+                                        .apply { remove(listNonTerms[j]) && addAll(0, pr2.values.flatten()) }))
+                            }
+                        }
+                    }
+                }
+
+
+
+
+            }
+
+            println("Проды: $newProds")
+
             //Непопосредственная рекурсия
             val imProds = mutableListOf<Map<String, MutableList<String>>>()
             //Ищем
@@ -42,9 +67,15 @@ class GrammarTrans {
                 newNonTerms.add(nonTerm)
             }
 
-            //Произвольная
 
-            return Grammar(newTerms, newNonTerms, newProds, newStart)
+            val newNewProds = mutableListOf<Map<String, MutableList<String>>>()
+            for (np in newProds) {
+                if (newNewProds.isEmpty() || newNewProds.none { it == np }) {
+                    newNewProds.add(np)
+                }
+            }
+
+            return Grammar(newTerms, newNonTerms, newNewProds, newStart)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
             val grammarWithoutEps = withoutEps(grammar)
