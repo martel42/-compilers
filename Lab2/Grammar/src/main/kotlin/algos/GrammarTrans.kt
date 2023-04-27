@@ -21,61 +21,89 @@ class GrammarTrans {
 
             //Произвольная
             val listNonTerms = newNonTerms.toList()
+            val nnTerms = mutableSetOf<String>()
             for ((i, nT) in newNonTerms.withIndex()) {
-                val prods = newProds.filter { it.keys.first() == listNonTerms[i] }
                 for (j in 0 until i) {
+                    val prods = newProds.filter { it.keys.first() == listNonTerms[i] }
                     val prods2 = newProds.filter { it.keys.first() == listNonTerms[j] }
                     for (pr in prods) {
                         if (pr.values.flatten()[0] == listNonTerms[j]) {
                             newProds.remove(pr)
                             for (pr2 in prods2) {
                                 newProds.add(mapOf(pr.keys.first() to pr.values.flatten().toMutableList()
-                                        .apply { remove(listNonTerms[j]) && addAll(j, pr2.values.flatten()) }))
+                                        .apply { remove(listNonTerms[j]) && addAll(0, pr2.values.flatten()) }))
                             }
                         }
                     }
                 }
 
 
+                //Непопосредственная рекурсия
+                val imProds = mutableListOf<Map<String, MutableList<String>>>()
+                val nnn = mutableListOf<Map<String, MutableList<String>>>()
+                //Ищем
+                for (pr in newProds)
+                    if (pr.keys.first() == pr.values.flatten()[0] && pr.values.flatten().size > 1 && pr.keys.first() == nT)
+                        imProds.add(pr)
+                //Добавляем и удаляем (заменяем)
+                for (pr in imProds) {
+                    newProds.remove(pr)
+                    //Те которые не имеют левую рекурсию
+                    val bufProds = newProds.filter { it.keys.first() == pr.keys.first() && it.keys.first() != it.values.flatten()[0]}
+                    val nonTerm = "${pr.keys.first()}1"
+                    for (bpr in bufProds) {
+                        nnn.add(mapOf(pr.keys.first() to bpr.values.flatten().toMutableList()
+                                .apply { add(nonTerm)  }))
 
 
-            }
-
-            println("Проды: $newProds")
-
-            //Непопосредственная рекурсия
-            val imProds = mutableListOf<Map<String, MutableList<String>>>()
-            //Ищем
-            for (pr in newProds)
-                if (pr.keys.first() == pr.values.flatten()[0] && pr.values.flatten().size > 1)
-                    imProds.add(pr)
-            //Добавляем и удаляем (заменяем)
-            for (pr in imProds) {
-                //Возможно лишнее удаление, если нет beta (см. алгоритм)
-                newProds.remove(pr)
-                val bufProds = newProds.filter { it.keys.first() == pr.keys.first() }
-                val nonTerm = "${pr.keys.first()}'"
-                for (bpr in bufProds) {
-                    newProds.add(mapOf(pr.keys.first() to bpr.values.flatten().toMutableList()
-                            .apply { add(nonTerm) && remove(bpr.keys.first()) }))
-
+                    }
                     newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
                             .apply { remove(pr.keys.first()) }))
                     newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
                             .apply { remove(pr.keys.first()) && add(nonTerm) }))
+                    nnTerms.add(nonTerm)
                 }
-                newNonTerms.add(nonTerm)
+
+                newProds.addAll(nnn)
+
             }
 
+            newNonTerms.addAll(nnTerms)
 
-            val newNewProds = mutableListOf<Map<String, MutableList<String>>>()
+//            //Непопосредственная рекурсия
+//            val imProds = mutableListOf<Map<String, MutableList<String>>>()
+//            //Ищем
+//            for (pr in newProds)
+//                if (pr.keys.first() == pr.values.flatten()[0] && pr.values.flatten().size > 1)
+//                    imProds.add(pr)
+//            //Добавляем и удаляем (заменяем)
+//            for (pr in imProds) {
+//                //Возможно лишнее удаление, если нет beta (см. алгоритм)
+//                newProds.remove(pr)
+//                val bufProds = newProds.filter { it.keys.first() == pr.keys.first() }
+//                val nonTerm = "${pr.keys.first()}'"
+//                for (bpr in bufProds) {
+//                    newProds.add(mapOf(pr.keys.first() to bpr.values.flatten().toMutableList()
+//                            .apply { add(nonTerm) && remove(bpr.keys.first()) }))
+//
+//                    newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
+//                            .apply { remove(pr.keys.first()) }))
+//                    newProds.add(mapOf(nonTerm to pr.values.flatten().toMutableList()
+//                            .apply { remove(pr.keys.first()) && add(nonTerm) }))
+//                }
+//                newNonTerms.add(nonTerm)
+//            }
+
+
+            val newNewProds = newProds.distinct().toMutableList()
             for (np in newProds) {
                 if (newNewProds.isEmpty() || newNewProds.none { it == np }) {
                     newNewProds.add(np)
                 }
             }
 
-            return Grammar(newTerms, newNonTerms, newNewProds, newStart)
+            println(newProds.filter { it.keys.first() == "C" }.distinct())
+            return Grammar(newTerms, newNonTerms, newNewProds , newStart)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
             val grammarWithoutEps = withoutEps(grammar)
@@ -265,8 +293,8 @@ class GrammarTrans {
             return Grammar(newTerms, newNonTerms, newProds, newStart)
         }
         fun withoutUseless(grammar: Grammar): Grammar {
-            //return withoutUnreachable(withoutNotGen(grammar))
-            return  withoutUnreachable(grammar)
+            return withoutUnreachable(withoutNotGen(grammar))
+            //return  withoutUnreachable(grammar)
         }
         fun withoutUnreachable(grammar: Grammar): Grammar {
             val listOfV = mutableListOf<MutableSet<String>>()
