@@ -102,7 +102,6 @@ class GrammarTrans {
                 }
             }
 
-            println(newProds.filter { it.keys.first() == "C" }.distinct())
             return Grammar(newTerms, newNonTerms, newNewProds , newStart)
         }
         fun withoutLoop(grammar: Grammar): Grammar {
@@ -279,8 +278,8 @@ class GrammarTrans {
                 if (pr.values.flatten().size == 1 && pr.values.flatten().contains("eps"))
                     newProds.remove(pr)
 
-            //Новый старт
-            val newStart = if (isEps[0]) {
+            //TODO: Новый старт
+            val newStart = if (false) {
                 newNonTerms.add("S'")
                 newProds.addAll(listOf(
                     mapOf("S'" to mutableListOf(grammarNotUseless.start)),
