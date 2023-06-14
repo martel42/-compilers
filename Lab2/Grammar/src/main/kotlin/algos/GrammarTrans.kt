@@ -7,8 +7,6 @@ class GrammarTrans {
     companion object {
         fun withoutLeftRec(grammar: Grammar): Grammar {
             val grammarWithoutLoop = withoutLoop(grammar)
-            println("Грамматика без циклов")
-            println(grammarWithoutLoop)
 
             val newTerms = mutableSetOf<String>()
             newTerms.addAll(grammarWithoutLoop.terms)
@@ -106,8 +104,6 @@ class GrammarTrans {
         }
         fun withoutLoop(grammar: Grammar): Grammar {
             val grammarWithoutEps = withoutEps(grammar)
-            println("Грамматика без эпсилон: ")
-            println(grammarWithoutEps)
 
             val newTerms = mutableSetOf<String>()
             newTerms.addAll(grammarWithoutEps.terms)
@@ -158,8 +154,6 @@ class GrammarTrans {
         }
         fun withoutEps(grammar: Grammar): Grammar {
             val grammarNotUseless = withoutUseless(grammar)
-            println("Граммтика без бесполезных")
-            println(grammarNotUseless)
             //ИТМОшный алговысер
             //Структура и инициализация
             val isEps = BooleanArray(grammarNotUseless.nonTerms.size) {false}

@@ -11,11 +11,10 @@ fun main() {
     val mapper = jacksonObjectMapper()
     val inputJson = Files.readAllLines(Path.of("Grammar/data/ucheb.json")).reduce { acc, it -> acc + it }
     val inputGrammar: Grammar = mapper.readValue(inputJson)
-    println("Начальная грамматика:")
-    println(inputGrammar)
     val newGrammar = GrammarTrans.withoutLeftRec(inputGrammar)
     println("Конечная грамматика:")
-    println(newGrammar)
-    val newJson = mapper.writeValueAsString(newGrammar)
-    Files.writeString(Path.of("Grammar/data/output.json"), newJson)
+    println("Терминалы: " + newGrammar.terms)
+    println("Нетерминалы: " + newGrammar.nonTerms)
+    println("Правила: " + newGrammar.prods)
+    println("Начало: " + newGrammar.start)
 }
